@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Económico 2025</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: #e2e0d8;
+    --border2: #cccac0;
+    --text: #1a1916;
+    --text2: #6b6960;
+    --text3: #9e9c94;
+    --blue: #1a4f8a;
+    --blue-light: #e8f0fa;
+    --red: #b83232;
+    --red-light: #faeaea;
+    --green: #2d6a3f;
+    --green-light: #e8f5ec;
+    --amber: #8a5a00;
+    --amber-light: #fdf3e0;
+    --accent: #1a4f8a;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* Header */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header-icon {
+    width: 32px; height: 32px;
+    background: var(--blue);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .header-icon svg { width: 18px; height: 18px; fill: white; }
+  .header-title { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+  .header-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .status-pill {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text2);
+    background: var(--surface2);
+    padding: 5px 12px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+  }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--amber);
+    transition: background 0.3s;
+  }
+  .status-dot.ok { background: #2d6a3f; }
+  .status-dot.err { background: var(--red); }
+
+  /* Layout */
+  .main { max-width: 1200px; margin: 0 auto; padding: 1.5rem 2rem 3rem; }
+
+  /* Filters bar */
+  .filters-bar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .filter-group { display: flex; align-items: center; gap: 6px; }
+  .filter-label { font-size: 12px; color: var(--text2); font-weight: 500; }
+  select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 6px 28px 6px 10px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6960' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
+  select:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 4px; flex-wrap: wrap;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 1.5rem;
+    width: fit-content;
+  }
+  .tab {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    padding: 7px 16px;
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); background: var(--border); }
+  .tab.active {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  /* KPI cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .kpi-label {
+    font-size: 11px; font-weight: 500; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--text3); margin-bottom: 6px;
+  }
+  .kpi-value { font-size: 24px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; margin-bottom: 6px; }
+  .kpi-sub { font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 4px; }
+  .badge {
+    font-size: 11px; font-weight: 500; padding: 2px 7px;
+    border-radius: 99px; display: inline-flex; align-items: center; gap: 3px;
+  }
+  .badge-green { background: var(--green-light); color: var(--green); }
+  .badge-red { background: var(--red-light); color: var(--red); }
+  .badge-amber { background: var(--amber-light); color: var(--amber); }
+  .badge-blue { background: var(--blue-light); color: var(--blue); }
+
+  /* Chart cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 1rem;
+  }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .card-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text2); }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; margin-bottom: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1rem; margin-bottom: 1rem; }
+
+  /* Legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* Ratio cards */
+  .ratio-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .ratio-name { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); margin-bottom: 4px; }
+  .ratio-val { font-size: 28px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 4px; }
+  .ratio-formula { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .ratio-status { font-size: 12px; margin-top: 6px; }
+
+  /* Table */
+  .tbl-wrap { overflow-x: auto; }
+  table.dtbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.dtbl th {
+    text-align: left; padding: 8px 10px;
+    border-bottom: 2px solid var(--border2);
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--text3); white-space: nowrap;
+  }
+  table.dtbl td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  table.dtbl tr:last-child td { border-bottom: none; font-weight: 600; background: var(--surface2); }
+  table.dtbl tr:hover td { background: var(--surface2); }
+  .tipo-venta { color: var(--blue); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .tipo-gasto { color: var(--red); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .tipo-mixto { color: var(--amber); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* Loading skeleton */
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+    height: 20px;
+  }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .main { padding: 1rem; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+    .header { padding: 0 1rem; }
+  }
+  @media (max-width: 480px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+  }
+
+  .divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
+
+  .empty-state {
+    text-align: center; padding: 3rem;
+    color: var(--text3); font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-brand">
+    <div class="header-icon">
+      <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+    </div>
+    <div>
+      <div class="header-title">Dashboard Económico</div>
+      <div class="header-sub">Estado de Resultados · 2025</div>
+    </div>
+  </div>
+  <div class="status-pill">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusMsg">Cargando datos...</span>
+  </div>
+</header>
+
+<main class="main">
+
+  <div class="filters-bar">
+    <div class="filter-group">
+      <span class="filter-label">Período</span>
+      <select id="filtroMes" onchange="renderAll()">
+        <option value="todos">Todos los meses</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Tipo</span>
+      <select id="filtroTipo" onchange="renderAll()">
+        <option value="todos">Ventas y Gastos</option>
+        <option value="venta">Solo Ventas</option>
+        <option value="gasto">Solo Gastos</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('resumen')">Resumen</button>
+    <button class="tab" onclick="setTab('ingresos')">Ingresos vs Gastos</button>
+    <button class="tab" onclick="setTab('composicion')">Composición</button>
+    <button class="tab" onclick="setTab('ratios')">Ratios y Márgenes</button>
+    <button class="tab" onclick="setTab('detalle')">Detalle por categoría</button>
+  </div>
+
+  <div id="tab-resumen"></div>
+  <div id="tab-ingresos" style="display:none"></div>
+  <div id="tab-composicion" style="display:none"></div>
+  <div id="tab-ratios" style="display:none"></div>
+  <div id="tab-detalle" style="display:none"></div>
+
+</main>
+
+<script>
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQqrcu0WC7utHUipxFQvJwgmcISm-cbTJ-GAQ9NlBdOOmxxPt3XuRn9cuHH9fkz0FN8A6Rw4v1Aml_y/pub?output=csv';
+
+let RAW = [];
+let charts = {};
+let currentTab = 'resumen';
+
+// ─── Utilities ────────────────────────────────────────────────
+const fmtARS = n => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
+const fmtK = n => {
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1e9) return sign + (abs/1e9).toFixed(1) + 'B';
+  if (abs >= 1e6) return sign + (abs/1e6).toFixed(1) + 'M';
+  if (abs >= 1e3) return sign + (abs/1e3).toFixed(0) + 'K';
+  return sign + Math.round(abs).toString();
+};
+const pct = n => (n * 100).toFixed(1) + '%';
+const tickCfg = { autoSkip: false, maxRotation: 45, font: { size: 11, family: 'DM Sans' }, color: '#9e9c94' };
+const gridCfg = { color: 'rgba(0,0,0,0.05)' };
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false }, tooltip: {
+    backgroundColor: '#fff', borderColor: '#e2e0d8', borderWidth: 1,
+    titleColor: '#1a1916', bodyColor: '#6b6960',
+    titleFont: { family: 'DM Sans', weight: '600', size: 12 },
+    bodyFont: { family: 'DM Sans', size: 12 },
+    padding: 10, cornerRadius: 8
+  }}
+};
+
+function setStatus(msg, state) {
+  document.getElementById('statusMsg').textContent = msg;
+  const dot = document.getElementById('statusDot');
+  dot.className = 'status-dot' + (state ? ' ' + state : '');
+}
+
+// ─── CSV Parser ───────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  return lines.slice(1).map(line => {
+    const vals = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { vals.push(cur.trim()); cur = ''; }
+      else cur += c;
+    }
+    vals.push(cur.trim());
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (vals[i] || '').replace(/^"|"$/g, ''); });
+    return obj;
+  });
+}
+
+// ─── Data Loading ─────────────────────────────────────────────
+async function loadData() {
+  try {
+    const res = await fetch(CSV_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    RAW = parseCSV(text).filter(r => r['Tipo'] && r['Neto Ítem'] !== undefined);
+    if (RAW.length === 0) throw new Error('Sin registros válidos');
+    setStatus('Datos cargados · ' + RAW.length + ' registros', 'ok');
+    buildFiltros();
+    renderAll();
+  } catch(e) {
+    setStatus('Error al cargar: ' + e.message, 'err');
+    document.getElementById('tab-resumen').innerHTML = `<div class="empty-state">No se pudieron cargar los datos.<br><small>${e.message}</small></div>`;
+  }
+}
+
+function buildFiltros() {
+  const key = findCol(['Año - mes', 'Año-mes', 'Anio - mes', 'Año - Mes']);
+  if (!key) return;
+  const meses = [...new Set(RAW.map(r => (r[key]||'').trim()).filter(Boolean))].sort();
+  const sel = document.getElementById('filtroMes');
+  meses.forEach(m => {
+    const o = document.createElement('option');
+    o.value = m; o.textContent = m; sel.appendChild(o);
+  });
+}
+
+function findCol(options) {
+  const keys = RAW.length > 0 ? Object.keys(RAW[0]) : [];
+  for (const opt of options) {
+    const found = keys.find(k => k.trim().toLowerCase() === opt.toLowerCase());
+    if (found) return found;
+  }
+  return keys.find(k => k.toLowerCase().includes('año') || k.toLowerCase().includes('anio') || k.toLowerCase().includes('mes')) || null;
+}
+
+function filteredData() {
+  const mes = document.getElementById('filtroMes').value;
+  const tipo = document.getElementById('filtroTipo').value;
+  const mesKey = findCol(['Año - mes','Año-mes','Anio - mes','Año - Mes']);
+  return RAW.filter(r => {
+    const mesOk = mes === 'todos' || (mesKey && (r[mesKey]||'').trim() === mes);
+    const t = getTipo(r);
+    const tipoOk = tipo === 'todos' || t === tipo;
+    return mesOk && tipoOk;
+  });
+}
+
+function getTipo(r) { return (r['Tipo'] || '').trim().toLowerCase(); }
+function getDesc(r) {
+  for (const k of ['Descripción','Descripcion','descripción','descripcion']) {
+    if (r[k] !== undefined) return (r[k]||'').trim();
+  }
+  return '';
+}
+function getMes(r) {
+  const key = findCol(['Año - mes','Año-mes','Anio - mes','Año - Mes']);
+  return key ? (r[key]||'').trim() : '';
+}
+function parseNeto(r) {
+  for (const k of ['Neto Ítem','Neto Item','Neto_Item','neto ítem']) {
+    if (r[k] !== undefined) return parseFloat(String(r[k]).replace(/\./g,'').replace(',','.')) || 0;
+  }
+  return 0;
+}
+function parseIVA(r) {
+  for (const k of ['IVA Insc. Ítem','IVA Insc. Item','IVA Insc Ítem']) {
+    if (r[k] !== undefined) return parseFloat(String(r[k]).replace(/\./g,'').replace(',','.')) || 0;
+  }
+  return 0;
+}
+
+function aggregate(data) {
+  let ventas = 0, gastos = 0, ivaVentas = 0, ivaGastos = 0;
+  const ventasPorMes = {}, gastosPorMes = {};
+  const ventasPorDesc = {}, gastosPorDesc = {};
+
+  data.forEach(r => {
+    const tipo = getTipo(r);
+    const neto = parseNeto(r);
+    const iva = parseIVA(r);
+    const mes = getMes(r);
+    const desc = getDesc(r);
+    if (tipo === 'venta') {
+      ventas += neto; ivaVentas += iva;
+      ventasPorMes[mes] = (ventasPorMes[mes]||0) + neto;
+      if (desc) ventasPorDesc[desc] = (ventasPorDesc[desc]||0) + neto;
+    } else if (tipo === 'gasto') {
+      gastos += neto; ivaGastos += iva;
+      gastosPorMes[mes] = (gastosPorMes[mes]||0) + neto;
+      if (desc) gastosPorDesc[desc] = (gastosPorDesc[desc]||0) + neto;
+    }
+  });
+  return { ventas, gastos, ivaVentas, ivaGastos, ventasPorMes, gastosPorMes, ventasPorDesc, gastosPorDesc };
+}
+
+function getMeses(agg) {
+  return [...new Set([...Object.keys(agg.ventasPorMes), ...Object.keys(agg.gastosPorMes)])].filter(Boolean).sort();
+}
+
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+function mkChart(id, config) {
+  destroyChart(id);
+  const el = document.getElementById(id);
+  if (el) charts[id] = new Chart(el, config);
+}
+
+// ─── Color palettes ───────────────────────────────────────────
+const C_VENTAS = ['#1a4f8a','#2e6db5','#4d8fd4','#80b4e8','#0e3460','#3a7cc4','#1d9e75','#0f6e56','#5dcaa5'];
+const C_GASTOS = ['#b83232','#d45050','#e87070','#f4a0a0','#7d1e1e','#c44040','#ba7517','#854f0b','#ef9f27'];
+
+function badge(val, good, ok) {
+  if (val >= good) return `<span class="badge badge-green">↑ Bueno</span>`;
+  if (val >= ok)   return `<span class="badge badge-amber">→ Regular</span>`;
+  return `<span class="badge badge-red">↓ Atención</span>`;
+}
+
+// ─── RESUMEN ─────────────────────────────────────────────────
+function renderResumen(agg) {
+  const res = agg.ventas - agg.gastos;
+  const margen = agg.ventas > 0 ? res / agg.ventas : 0;
+  const meses = getMeses(agg);
+  const vArr = meses.map(m => agg.ventasPorMes[m]||0);
+  const gArr = meses.map(m => agg.gastosPorMes[m]||0);
+  const rArr = meses.map((m,i) => vArr[i] - gArr[i]);
+  const acum = rArr.reduce((acc,v) => { acc.push((acc[acc.length-1]||0)+v); return acc; }, []);
+
+  document.getElementById('tab-resumen').innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Ventas netas</div>
+        <div class="kpi-value" style="color:var(--blue)">$${fmtK(agg.ventas)}</div>
+        <div class="kpi-sub">${meses.length} mes(es) · sin IVA</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Gastos totales</div>
+        <div class="kpi-value" style="color:var(--red)">$${fmtK(agg.gastos)}</div>
+        <div class="kpi-sub">Costo operativo · sin IVA</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Resultado neto</div>
+        <div class="kpi-value" style="color:${res>=0?'var(--green)':'var(--red)'}">$${fmtK(res)}</div>
+        <div class="kpi-sub">${res>=0?'<span class="badge badge-green">Superávit</span>':'<span class="badge badge-red">Déficit</span>'}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Margen neto</div>
+        <div class="kpi-value" style="color:${margen>=0.1?'var(--green)':margen>=0?'var(--amber)':'var(--red)'}">${pct(margen)}</div>
+        <div class="kpi-sub">${badge(margen, 0.15, 0.05)}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Evolución mensual — ventas, gastos y resultado</span>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot" style="background:#1a4f8a"></span>Ventas</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#b83232"></span>Gastos</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#2d6a3f"></span>Resultado (línea)</div>
+      </div>
+      <div style="position:relative;height:280px">
+        <canvas id="ch_evol" role="img" aria-label="Evolución mensual ventas gastos resultado">Comparativa mensual.</canvas>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Resultado acumulado</span></div>
+        <div style="position:relative;height:200px">
+          <canvas id="ch_acum" role="img" aria-label="Resultado acumulado mensual">Resultado acumulado.</canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Cobertura de gastos por mes (Ventas / Gastos)</span></div>
+        <div style="position:relative;height:200px">
+          <canvas id="ch_cob" role="img" aria-label="Cobertura de gastos mensual">Ratio cobertura.</canvas>
+        </div>
+      </div>
+    </div>`;
+
+  mkChart('ch_evol', {
+    type: 'bar',
+    data: { labels: meses, datasets: [
+      { label:'Ventas', data:vArr, backgroundColor:'rgba(26,79,138,0.75)', borderRadius:4, borderSkipped:false },
+      { label:'Gastos', data:gArr, backgroundColor:'rgba(184,50,50,0.75)', borderRadius:4, borderSkipped:false },
+      { label:'Resultado', data:rArr, type:'line', borderColor:'#2d6a3f', backgroundColor:'rgba(0,0,0,0)',
+        borderWidth:2.5, pointRadius:4, pointBackgroundColor:rArr.map(v=>v>=0?'#2d6a3f':'#b83232'), tension:0.3 }
+    ]},
+    options: { ...chartDefaults, scales: {
+      x:{ grid:{display:false}, ticks:tickCfg },
+      y:{ grid:gridCfg, ticks:{ ...tickCfg, callback:v=>'$'+fmtK(v) } }
+    }}
+  });
+
+  mkChart('ch_acum', {
+    type:'line',
+    data:{ labels:meses, datasets:[{
+      data:acum, borderColor: acum[acum.length-1]>=0?'#2d6a3f':'#b83232',
+      backgroundColor: acum[acum.length-1]>=0?'rgba(45,106,63,0.08)':'rgba(184,50,50,0.08)',
+      fill:true, tension:0.3, borderWidth:2.5, pointRadius:4
+    }]},
+    options:{ ...chartDefaults, scales:{
+      x:{grid:{display:false},ticks:tickCfg},
+      y:{grid:gridCfg,ticks:{...tickCfg,callback:v=>'$'+fmtK(v)}}
+    }}
+  });
+
+  const cobArr = meses.map((m,i)=> gArr[i]>0 ? +(vArr[i]/gArr[i]).toFixed(2) : 0);
+  mkChart('ch_cob', {
+    type:'bar',
+    data:{ labels:meses, datasets:[{
+      data:cobArr,
+      backgroundColor:cobArr.map(v=>v>=1.2?'rgba(45,106,63,0.7)':v>=1?'rgba(138,90,0,0.7)':'rgba(184,50,50,0.7)'),
+      borderRadius:4
+    }]},
+    options:{ ...chartDefaults, scales:{
+      x:{grid:{display:false},ticks:tickCfg},
+      y:{grid:gridCfg,ticks:{...tickCfg,callback:v=>v+'x'},min:0}
+    }}
+  });
+}
+
+// ─── INGRESOS VS GASTOS ───────────────────────────────────────
+function renderIngresos(agg) {
+  const meses = getMeses(agg);
+  const vArr = meses.map(m=>agg.ventasPorMes[m]||0);
+  const gArr = meses.map(m=>agg.gastosPorMes[m]||0);
+  const margenArr = meses.map((m,i)=> vArr[i]>0 ? +((vArr[i]-gArr[i])/vArr[i]*100).toFixed(1) : 0);
+  const varMesArr = vArr.map((v,i)=> i===0 ? 0 : vArr[i-1]>0 ? +((v-vArr[i-1])/vArr[i-1]*100).toFixed(1) : 0);
+
+  document.getElementById('tab-ingresos').innerHTML = `
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Ventas netas — evolución mensual</span></div>
+        <div style="position:relative;height:220px"><canvas id="ch_iv" role="img" aria-label="Ventas mensuales">Ventas por mes.</canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Gastos — evolución mensual</span></div>
+        <div style="position:relative;height:220px"><canvas id="ch_ig" role="img" aria-label="Gastos mensuales">Gastos por mes.</canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Margen neto mensual (%)</span></div>
+      <div style="position:relative;height:220px"><canvas id="ch_mg" role="img" aria-label="Margen mensual">Margen porcentual.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Variación mensual de ventas (%)</span></div>
+      <div style="position:relative;height:180px"><canvas id="ch_var" role="img" aria-label="Variación mensual ventas">Variación mes a mes.</canvas></div>
+    </div>`;
+
+  mkChart('ch_iv',{type:'line',data:{labels:meses,datasets:[{data:vArr,borderColor:'#1a4f8a',backgroundColor:'rgba(26,79,138,0.07)',fill:true,tension:0.3,borderWidth:2.5,pointRadius:4}]},options:{...chartDefaults,scales:{x:{grid:{display:false},ticks:tickCfg},y:{grid:gridCfg,ticks:{...tickCfg,callback:v=>'$'+fmtK(v)}}}}});
+  mkChart('ch_ig',{type:'line',data:{labels:meses,datasets:[{data:gArr,borderColor:'#b83232',backgroundColor:'rgba(184,50,50,0.07)',fill:true,tension:0.3,borderWidth:2.5,pointRadius:4}]},options:{...chartDefaults,scales:{x:{grid:{display:false},ticks:tickCfg},y:{grid:gridCfg,ticks:{...tickCfg,callback:v=>'$'+fmtK(v)}}}}});
+  mkChart('ch_mg',{type:'bar',data:{labels:meses,datasets:[{data:margenArr,backgroundColor:margenArr.map(v=>v>=0?'rgba(45,106,63,0.75)':'rgba(184,50,50,0.75)'),borderRadius:4}]},options:{...chartDefaults,scales:{x:{grid:{display:false},ticks:tickCfg},y:{grid:gridCfg,ticks:{...tickCfg,callback:v=>v+'%'}}}}});
+  mkChart('ch_var',{type:'bar',data:{labels:meses,datasets:[{data:varMesArr,backgroundColor:varMesArr.map(v=>v>=0?'rgba(26,79,138,0.7)':'rgba(184,50,50,0.7)'),borderRadius:4}]},options:{...chartDefaults,scales:{x:{grid:{display:false},ticks:tickCfg},y:{grid:gridCfg,ticks:{...tickCfg,callback:v=>v+'%'}}}}});
+}
+
+// ─── COMPOSICIÓN ─────────────────────────────────────────────
+function renderComposicion(agg) {
+  const topV = Object.entries(agg.ventasPorDesc).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const topG = Object.entries(agg.gastosPorDesc).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  const legV = topV.map((e,i)=>`<div class="legend-item"><span class="legend-dot" style="background:${C_VENTAS[i%C_VENTAS.length]}"></span>${e[0].substring(0,25)}</div>`).join('');
+  const legG = topG.map((e,i)=>`<div class="legend-item"><span class="legend-dot" style="background:${C_GASTOS[i%C_GASTOS.length]}"></span>${e[0].substring(0,25)}</div>`).join('');
+
+  document.getElementById('tab-composicion').innerHTML = `
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Composición de ventas</span></div>
+        <div class="legend" style="font-size:11px">${legV}</div>
+        <div style="position:relative;height:260px"><canvas id="ch_dv" role="img" aria-label="Composición ventas">Dona ventas.</canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Composición de gastos</span></div>
+        <div class="legend" style="font-size:11px">${legG}</div>
+        <div style="position:relative;height:260px"><canvas id="ch_dg" role="img" aria-label="Composición gastos">Dona gastos.</canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Top categorías de ventas</span></div>
+      <div style="position:relative;height:${topV.length*38+60}px"><canvas id="ch_bv" role="img" aria-label="Top categorías ventas">Barras ventas.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Top categorías de gastos</span></div>
+      <div style="position:relative;height:${topG.length*38+60}px"><canvas id="ch_bg" role="img" aria-label="Top categorías gastos">Barras gastos.</canvas></div>
+    </div>`;
+
+  const dOpts = { ...chartDefaults, cutout:'62%' };
+  mkChart('ch_dv',{type:'doughnut',data:{labels:topV.map(e=>e[0]),datasets:[{data:topV.map(e=>e[1]),backgroundColor:C_VENTAS,borderWidth:2,borderColor:'#fff'}]},options:dOpts});
+  mkChart('ch_dg',{type:'doughnut',data:{labels:topG.map(e=>e[0]),datasets:[{data:topG.map(e=>e[1]),backgroundColor:C_GASTOS,borderWidth:2,borderColor:'#fff'}]},options:dOpts});
+
+  const hOpts = {
+    ...chartDefaults,
+    indexAxis:'y',
+    scales:{
+      x:{grid:gridCfg,ticks:{...tickCfg,callback:v=>'$'+fmtK(v)}},
+      y:{grid:{display:false},ticks:{...tickCfg,font:{size:11,family:'DM Sans'}}}
+    }
+  };
+  mkChart('ch_bv',{type:'bar',data:{labels:topV.map(e=>e[0].substring(0,35)),datasets:[{data:topV.map(e=>e[1]),backgroundColor:'rgba(26,79,138,0.75)',borderRadius:4}]},options:hOpts});
+  mkChart('ch_bg',{type:'bar',data:{labels:topG.map(e=>e[0].substring(0,35)),datasets:[{data:topG.map(e=>e[1]),backgroundColor:'rgba(184,50,50,0.75)',borderRadius:4}]},options:{...hOpts}});
+}
+
+// ─── RATIOS ───────────────────────────────────────────────────
+function renderRatios(agg) {
+  const res = agg.ventas - agg.gastos;
+  const margenNeto = agg.ventas > 0 ? res / agg.ventas : 0;
+  const cobGastos = agg.gastos > 0 ? agg.ventas / agg.gastos : 0;
+  const pesoGastos = agg.ventas > 0 ? agg.gastos / agg.ventas : 0;
+  const meses = getMeses(agg);
+  const vArr = meses.map(m=>agg.ventasPorMes[m]||0);
+  const gArr = meses.map(m=>agg.gastosPorMes[m]||0);
+  const margenArr = meses.map((m,i)=>vArr[i]>0?+((vArr[i]-gArr[i])/vArr[i]*100).toFixed(1):0);
+  const cobArr = meses.map((m,i)=>gArr[i]>0?+(vArr[i]/gArr[i]).toFixed(2):0);
+  const pesoArr = meses.map((m,i)=>vArr[i]>0?+(gArr[i]/vArr[i]*100).toFixed(1):0);
+
+  document.getElementById('tab-ratios').innerHTML = `
+    <div class="grid-3">
+      <div class="ratio-card">
+        <div class="ratio-name">Margen neto</div>
+        <div class="ratio-val" style="color:${margenNeto>=0.15?'var(--green)':margenNeto>=0.05?'var(--amber)':'var(--red)'}">${pct(margenNeto)}</div>
+        <div class="ratio-formula">Resultado / Ventas</div>
+        <div class="ratio-status">${badge(margenNeto,0.15,0.05)} Ref: ≥15% bueno</div>
+      </div>
+      <div class="ratio-card">
+        <div class="ratio-name">Cobertura de gastos</div>
+        <div class="ratio-val" style="color:${cobGastos>=1.2?'var(--green)':cobGastos>=1?'var(--amber)':'var(--red)'}">${cobGastos.toFixed(2)}x</div>
+        <div class="ratio-formula">Ventas / Gastos</div>
+        <div class="ratio-status">${badge(cobGastos,1.2,1)} Ref: ≥1.2x bueno</div>
+      </div>
+      <div class="ratio-card">
+        <div class="ratio-name">Peso de gastos</div>
+        <div class="ratio-val" style="color:${pesoGastos<=0.7?'var(--green)':pesoGastos<=0.9?'var(--amber)':'var(--red)'}">${pct(pesoGastos)}</div>
+        <div class="ratio-formula">Gastos / Ventas</div>
+        <div class="ratio-status">${badge(1-pesoGastos,0.3,0.1)} Ref: ≤70% bueno</div>
+      </div>
+      <div class="ratio-card">
+        <div class="ratio-name">IVA ventas</div>
+        <div class="ratio-val" style="color:var(--blue)">$${fmtK(agg.ivaVentas)}</div>
+        <div class="ratio-formula">IVA débito fiscal</div>
+        <div class="ratio-status"><span class="badge badge-blue">Débito fiscal</span></div>
+      </div>
+      <div class="ratio-card">
+        <div class="ratio-name">IVA gastos</div>
+        <div class="ratio-val" style="color:var(--red)">$${fmtK(agg.ivaGastos)}</div>
+        <div class="ratio-formula">IVA crédito fiscal</div>
+        <div class="ratio-status"><span class="badge badge-blue">Crédito fiscal</span></div>
+      </div>
+      <div class="ratio-card">
+        <div class="ratio-name">Posición IVA</div>
+        <div class="ratio-val" style="color:${agg.ivaVentas-agg.ivaGastos>=0?'var(--red)':'var(--green)'}">$${fmtK(agg.ivaVentas-agg.ivaGastos)}</div>
+        <div class="ratio-formula">IVA débito − crédito</div>
+        <div class="ratio-status">${agg.ivaVentas-agg.ivaGastos>=0?'<span class="badge badge-red">A pagar</span>':'<span class="badge badge-green">A favor</span>'}</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Evolución del margen neto (%)</span></div>
+        <div style="position:relative;height:200px"><canvas id="ch_rm" role="img" aria-label="Margen neto evolución">Margen mensual.</canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Cobertura de gastos mensual (x)</span></div>
+        <div style="position:relative;height:200px"><canvas id="ch_rc" role="img" aria-label="Cobertura gastos evolución">Cobertura mensual.</canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Peso de gastos sobre ventas mensual (%)</span></div>
+      <div style="position:relative;height:200px"><canvas id="ch_rp" role="img" aria-label="Peso gastos evolución">Peso gastos mensual.</canvas></div>
+    </div>`;
+
+  mkChart('ch_rm',{type:'line',data:{labels:meses,datasets:[{data:margenArr,borderColor:'#1a4f8a',backgroundColor:'rgba(26,79,138,0.07)',fill:true,tension:0.3,borderWidth:2.5,pointRadius:4,pointBackgroundColor:margenArr.map(v=>v>=0?'#2d6a3f':'#b83232')}]},options:{...chartDefaults,scales:{x:{grid:{display:false},ticks:tickCfg},y:{grid:gridCfg,ticks:{...tickCfg,callback:v=>v+'%'}}}}});
+  mkChart('ch_rc',{type:'bar',data:{labels:meses,datasets:[{data:cobArr,backgroundColor:cobArr.map(v=>v>=1.2?'rgba(45,106,63,0.75)':v>=1?'rgba(138,90,0,0.7)':'rgba(184,50,50,0.7)'),borderRadius:4}]},options:{...chartDefaults,scales:{x:{grid:{display:false},ticks:tickCfg},y:{grid:gridCfg,ticks:{...tickCfg,callback:v=>v+'x'},min:0}}}});
+  mkChart('ch_rp',{type:'line',data:{labels:meses,datasets:[{data:pesoArr,borderColor:'#b83232',backgroundColor:'rgba(184,50,50,0.07)',fill:true,tension:0.3,borderWidth:2.5,pointRadius:4}]},options:{...chartDefaults,scales:{x:{grid:{display:false},ticks:tickCfg},y:{grid:gridCfg,ticks:{...tickCfg,callback:v=>v+'%'}}}}});
+}
+
+// ─── DETALLE ─────────────────────────────────────────────────
+function renderDetalle(agg) {
+  const allDesc = [...new Set([...Object.keys(agg.ventasPorDesc),...Object.keys(agg.gastosPorDesc)])].sort();
+  let rows = '';
+  let totV=0, totG=0;
+  allDesc.forEach(d => {
+    const v = agg.ventasPorDesc[d]||0;
+    const g = agg.gastosPorDesc[d]||0;
+    totV += v; totG += g;
+    const tipoStr = v>0&&g===0?'<span class="tipo-venta">Venta</span>':v===0&&g>0?'<span class="tipo-gasto">Gasto</span>':'<span class="tipo-mixto">Mixto</span>';
+    const mg = v>0?pct((v-g)/v):'-';
+    rows += `<tr>
+      <td>${d}</td>
+      <td>${tipoStr}</td>
+      <td style="text-align:right">${v>0?'$'+fmtK(v):'-'}</td>
+      <td style="text-align:right">${g>0?'$'+fmtK(g):'-'}</td>
+      <td style="text-align:right;color:${v>0&&(v-g)/v>=0.1?'var(--green)':v>0&&(v-g)/v>=0?'var(--amber)':'var(--red)'}">${mg}</td>
+    </tr>`;
+  });
+  const totRes = totV - totG;
+  rows += `<tr>
+    <td><strong>TOTAL</strong></td>
+    <td>—</td>
+    <td style="text-align:right;color:var(--blue)"><strong>$${fmtK(totV)}</strong></td>
+    <td style="text-align:right;color:var(--red)"><strong>$${fmtK(totG)}</strong></td>
+    <td style="text-align:right;color:${totRes>=0?'var(--green)':'var(--red)'}"><strong>${totV>0?pct((totV-totG)/totV):'-'}</strong></td>
+  </tr>`;
+
+  document.getElementById('tab-detalle').innerHTML = `
+    <div class="card">
+      <div class="card-header"><span class="card-title">Detalle por concepto / categoría</span></div>
+      <div class="tbl-wrap">
+        <table class="dtbl">
+          <thead><tr>
+            <th>Descripción</th><th>Tipo</th>
+            <th style="text-align:right">Ventas netas</th>
+            <th style="text-align:right">Gastos netos</th>
+            <th style="text-align:right">Margen</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+// ─── Tab switching ────────────────────────────────────────────
+function setTab(t) {
+  currentTab = t;
+  const tabs = ['resumen','ingresos','composicion','ratios','detalle'];
+  tabs.forEach(id => {
+    document.getElementById('tab-'+id).style.display = id===t?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach((btn,i) => {
+    btn.classList.toggle('active', tabs[i]===t);
+  });
+  renderAll();
+}
+
+function renderAll() {
+  const data = filteredData();
+  const agg = aggregate(data);
+  if (currentTab==='resumen') renderResumen(agg);
+  if (currentTab==='ingresos') renderIngresos(agg);
+  if (currentTab==='composicion') renderComposicion(agg);
+  if (currentTab==='ratios') renderRatios(agg);
+  if (currentTab==='detalle') renderDetalle(agg);
+}
+
+// Boot
+loadData();
+</script>
+</body>
+</html>
