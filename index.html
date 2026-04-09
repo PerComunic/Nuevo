@@ -296,7 +296,6 @@
 </main>
 
 <script>
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQqrcu0WC7utHUipxFQvJwgmcISm-cbTJ-GAQ9NlBdOOmxxPt3XuRn9cuHH9fkz0FN8A6Rw4v1Aml_y/pub?output=csv';
 
 let RAW = [];
 let charts = {};
@@ -355,20 +354,50 @@ function parseCSV(text) {
 }
 
 // ─── Data Loading ─────────────────────────────────────────────
+const CSV_DIRECT = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQqrcu0WC7utHUipxFQvJwgmcISm-cbTJ-GAQ9NlBdOOmxxPt3XuRn9cuHH9fkz0FN8A6Rw4v1Aml_y/pub?output=csv';
+const CSV_PROXY1 = 'https://corsproxy.io/?' + CSV_DIRECT;
+const CSV_PROXY2 = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(CSV_DIRECT);
+
+async function tryFetch(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const text = await res.text();
+  if (!text || text.trim().length < 10) throw new Error('Respuesta vacía');
+  return text;
+}
+
 async function loadData() {
-  try {
-    const res = await fetch(CSV_URL);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-    RAW = parseCSV(text).filter(r => r['Tipo'] && r['Neto Ítem'] !== undefined);
-    if (RAW.length === 0) throw new Error('Sin registros válidos');
-    setStatus('Datos cargados · ' + RAW.length + ' registros', 'ok');
-    buildFiltros();
-    renderAll();
-  } catch(e) {
-    setStatus('Error al cargar: ' + e.message, 'err');
-    document.getElementById('tab-resumen').innerHTML = `<div class="empty-state">No se pudieron cargar los datos.<br><small>${e.message}</small></div>`;
+  const attempts = [
+    { url: CSV_PROXY1, label: 'proxy 1' },
+    { url: CSV_PROXY2, label: 'proxy 2' },
+    { url: CSV_DIRECT, label: 'directo' },
+  ];
+  let lastError = null;
+  for (const attempt of attempts) {
+    try {
+      setStatus('Conectando (' + attempt.label + ')...', '');
+      const text = await tryFetch(attempt.url);
+      RAW = parseCSV(text).filter(r => {
+        const tipoKey = Object.keys(r).find(k => k.trim().toLowerCase() === 'tipo');
+        return tipoKey && r[tipoKey];
+      });
+      if (RAW.length === 0) throw new Error('Sin registros válidos');
+      setStatus('Datos cargados · ' + RAW.length + ' registros', 'ok');
+      buildFiltros();
+      renderAll();
+      return;
+    } catch(e) {
+      lastError = e;
+    }
   }
+  setStatus('Error: ' + lastError.message, 'err');
+  document.getElementById('tab-resumen').innerHTML = `
+    <div class="empty-state">
+      No se pudieron cargar los datos.<br>
+      <small>${lastError.message}</small><br><br>
+      <small>Verificá que el Google Sheet esté publicado en:<br>
+      Archivo → Publicar en la web → CSV</small>
+    </div>`;
 }
 
 function buildFiltros() {
